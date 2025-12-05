@@ -9,11 +9,12 @@ import { AlertCircle, Info, Loader2, Plus, Trash2, User, Building2, CheckCircle2
 
 interface ExpenseFormProps {
   projects: Project[];
+  existingEmployees: string[]; // Dynamic list of employees
   onSave: (expense: Omit<Expense, 'id'>) => void;
   onCancel: () => void;
 }
 
-export const ExpenseForm: React.FC<ExpenseFormProps> = ({ projects, onSave, onCancel }) => {
+export const ExpenseForm: React.FC<ExpenseFormProps> = ({ projects, existingEmployees, onSave, onCancel }) => {
   // --- State ---
   const [projectId, setProjectId] = useState<string>('');
   const [categoryId, setCategoryId] = useState<string>('');
@@ -25,11 +26,18 @@ export const ExpenseForm: React.FC<ExpenseFormProps> = ({ projects, onSave, onCa
   ]);
 
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>(PaymentMethod.ADVANCE);
-  const [payerName, setPayerName] = useState<string>(EMPLOYEES[0]);
+  const [payerName, setPayerName] = useState<string>('');
   const [vendorTaxId, setVendorTaxId] = useState<string>('');
 
   const [aiAnalysis, setAiAnalysis] = useState<string>('');
   const [isAnalyzing, setIsAnalyzing] = useState(false);
+
+  // Initialize payer name with default if list exists
+  useEffect(() => {
+     if(existingEmployees.length > 0 && !payerName) {
+         setPayerName(existingEmployees[0]);
+     }
+  }, [existingEmployees]);
 
   // --- Derived State ---
   const selectedProject = projects.find(p => p.id === projectId);
@@ -81,10 +89,17 @@ export const ExpenseForm: React.FC<ExpenseFormProps> = ({ projects, onSave, onCa
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!projectId || !categoryId || !invoiceNumber) {
-      alert("請填寫完整必填欄位");
+    // Validate required fields (Invoice Number is now OPTIONAL)
+    if (!projectId || !categoryId) {
+      alert("請填寫歸屬計畫與支出類別");
       return;
     }
+    
+    if (paymentMethod === PaymentMethod.ADVANCE && !payerName.trim()) {
+        alert("請輸入代墊人姓名");
+        return;
+    }
+
     if (totalAmount <= 0) {
       alert("金額不能為 0");
       return;
@@ -94,7 +109,7 @@ export const ExpenseForm: React.FC<ExpenseFormProps> = ({ projects, onSave, onCa
       projectId,
       category: categoryId,
       date,
-      invoiceNumber,
+      invoiceNumber: invoiceNumber.trim() === '' ? undefined : invoiceNumber,
       paymentMethod,
       payerName: paymentMethod === PaymentMethod.ADVANCE ? payerName : undefined,
       vendorTaxId: paymentMethod === PaymentMethod.DIRECT ? vendorTaxId : undefined,
@@ -106,10 +121,13 @@ export const ExpenseForm: React.FC<ExpenseFormProps> = ({ projects, onSave, onCa
     });
   };
 
+  const inputStyle = "w-full text-lg p-3 rounded-lg bg-gray-900 text-white border border-gray-700 focus:border-orange-500 focus:ring-1 focus:ring-orange-500 placeholder-gray-500";
+  const selectStyle = "w-full text-lg p-3 rounded-lg bg-gray-900 text-white border border-gray-700 focus:border-orange-500 focus:ring-1 focus:ring-orange-500 appearance-none";
+
   return (
     <div className="max-w-4xl mx-auto space-y-8 pb-20">
-      <div className="flex items-center gap-3 border-b-2 border-black pb-4">
-        <div className="bg-black text-white w-10 h-10 rounded flex items-center justify-center font-bold text-xl">1</div>
+      <div className="flex items-center gap-3 border-b-4 border-black pb-4">
+        <div className="bg-black text-white w-12 h-12 rounded flex items-center justify-center font-bold text-2xl">1</div>
         <h2 className="text-3xl font-bold text-gray-900">
            新增核銷單據
         </h2>
@@ -125,20 +143,21 @@ export const ExpenseForm: React.FC<ExpenseFormProps> = ({ projects, onSave, onCa
               </label>
               <select
                 required
-                className="w-full text-lg p-4 border-2 border-gray-300 rounded-lg bg-white focus:border-black focus:ring-0 text-gray-900"
+                className={selectStyle}
                 value={projectId}
                 onChange={(e) => setProjectId(e.target.value)}
               >
-                <option value="" className="text-gray-500">-- 請下拉選擇 --</option>
+                <option value="" className="text-gray-400">-- 請下拉選擇 --</option>
                 {projects.map(p => (
-                  <option key={p.id} value={p.id} className="text-gray-900 font-medium">
+                  <option key={p.id} value={p.id} className="text-white">
                     {p.code} - {p.name}
                   </option>
                 ))}
               </select>
               {selectedProject && (
-                <div className="mt-2 text-sm text-gray-500 bg-gray-100 p-2 rounded">
-                   可用餘額: <span className="font-bold text-gray-900">${selectedProject.remaining.toLocaleString()}</span>
+                <div className="mt-3 text-sm flex justify-between items-center bg-gray-100 p-2 rounded">
+                   <span className="text-gray-600">本案餘額</span>
+                   <span className="font-bold text-xl text-gray-900">${selectedProject.remaining.toLocaleString()}</span>
                 </div>
               )}
             </Card>
@@ -160,14 +179,14 @@ export const ExpenseForm: React.FC<ExpenseFormProps> = ({ projects, onSave, onCa
                         className={`
                           p-3 rounded border-2 text-left flex items-center gap-2 transition-all
                           ${isSelected 
-                            ? 'border-orange-500 bg-orange-50 text-gray-900' 
-                            : 'border-gray-200 text-gray-600 hover:border-gray-400'
+                            ? 'border-orange-500 bg-orange-500 text-white' 
+                            : 'border-gray-200 text-gray-900 hover:border-gray-400'
                           }
-                          ${!allowed ? 'opacity-30 cursor-not-allowed' : ''}
+                          ${!allowed ? 'opacity-30 cursor-not-allowed bg-gray-100' : ''}
                         `}
                       >
                         <span className="text-xl">{cat.icon}</span>
-                        <span className={`font-bold ${isSelected ? 'text-orange-700' : ''}`}>{cat.name}</span>
+                        <span className="font-bold">{cat.name}</span>
                       </button>
                     );
                   })}
@@ -178,28 +197,28 @@ export const ExpenseForm: React.FC<ExpenseFormProps> = ({ projects, onSave, onCa
         {/* Section 2: Invoice Details */}
         <Card className="p-6">
            <h3 className="text-xl font-bold text-gray-900 mb-6 flex items-center gap-2">
-             <span className="bg-black text-white w-6 h-6 rounded text-sm flex items-center justify-center">2</span>
-             發票資訊
+             <span className="bg-black text-white w-8 h-8 rounded text-sm flex items-center justify-center font-bold">2</span>
+             發票/收據資訊
            </h3>
            
            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
              <div>
-                <label className="block text-gray-700 font-bold mb-2">發票號碼</label>
+                <label className="block text-gray-900 font-bold mb-2">發票/收據號碼</label>
                 <input
                   type="text"
-                  required
-                  placeholder="AB-12345678"
-                  className="w-full text-xl p-3 border-2 border-gray-300 rounded-lg uppercase focus:border-black focus:ring-0 text-gray-900 placeholder-gray-400"
+                  placeholder="AB-12345678 (免用發票可留空)"
+                  className={`${inputStyle} uppercase tracking-wider`}
                   value={invoiceNumber}
                   onChange={(e) => setInvoiceNumber(e.target.value)}
                 />
+                <span className="text-xs text-gray-400 mt-1 block">若為免用發票收據，此欄位可不填</span>
              </div>
              <div>
-                <label className="block text-gray-700 font-bold mb-2">發票日期</label>
+                <label className="block text-gray-900 font-bold mb-2">日期 <span className="text-orange-600">*</span></label>
                 <input
                   type="date"
                   required
-                  className="w-full text-xl p-3 border-2 border-gray-300 rounded-lg focus:border-black focus:ring-0 text-gray-900"
+                  className={inputStyle}
                   value={date}
                   onChange={(e) => setDate(e.target.value)}
                 />
@@ -214,7 +233,7 @@ export const ExpenseForm: React.FC<ExpenseFormProps> = ({ projects, onSave, onCa
             <div className="space-y-4">
               {items.map((item, index) => (
                 <div key={item.id} className="flex flex-col md:flex-row gap-3 items-start md:items-center bg-white p-3 rounded shadow-sm border border-gray-200">
-                    <span className="bg-gray-200 text-gray-600 w-8 h-8 rounded flex items-center justify-center font-bold flex-shrink-0">
+                    <span className="bg-black text-white w-8 h-8 rounded flex items-center justify-center font-bold flex-shrink-0">
                       {index + 1}
                     </span>
                     
@@ -223,7 +242,7 @@ export const ExpenseForm: React.FC<ExpenseFormProps> = ({ projects, onSave, onCa
                         type="text"
                         required
                         placeholder="品名 (例如: A4紙)"
-                        className="w-full p-2 border border-gray-300 rounded text-gray-900 font-medium focus:border-black focus:ring-0"
+                        className={inputStyle}
                         value={item.name}
                         onChange={(e) => handleItemChange(item.id, 'name', e.target.value)}
                         onBlur={handleAICheck}
@@ -233,31 +252,31 @@ export const ExpenseForm: React.FC<ExpenseFormProps> = ({ projects, onSave, onCa
                     <div className="flex gap-2 w-full md:w-auto">
                       <div className="flex-1">
                          <div className="relative">
-                           <span className="absolute left-2 top-2 text-gray-400">$</span>
+                           <span className="absolute left-3 top-3 text-gray-400">$</span>
                            <input
                               type="number"
                               min="0"
                               placeholder="單價"
-                              className="w-24 p-2 pl-5 border border-gray-300 rounded text-right focus:border-black focus:ring-0"
+                              className={`${inputStyle} pl-8 text-right`}
                               value={item.unitPrice || ''}
                               onChange={(e) => handleItemChange(item.id, 'unitPrice', parseInt(e.target.value) || 0)}
                            />
                          </div>
                       </div>
-                      <span className="text-gray-400 self-center">x</span>
+                      <span className="text-gray-400 self-center font-bold">x</span>
                       <div className="flex-1">
                          <input
                             type="number"
                             min="1"
                             placeholder="數量"
-                            className="w-16 p-2 border border-gray-300 rounded text-center focus:border-black focus:ring-0"
+                            className={`${inputStyle} text-center`}
                             value={item.quantity}
                             onChange={(e) => handleItemChange(item.id, 'quantity', parseInt(e.target.value) || 1)}
                          />
                       </div>
                     </div>
 
-                    <div className="text-right min-w-[80px] font-bold text-xl text-gray-900">
+                    <div className="text-right min-w-[100px] font-bold text-xl text-gray-900">
                        ${item.amount.toLocaleString()}
                     </div>
 
@@ -267,7 +286,7 @@ export const ExpenseForm: React.FC<ExpenseFormProps> = ({ projects, onSave, onCa
                         onClick={() => removeItem(item.id)}
                         className="text-gray-400 hover:text-red-500 p-2 transition-colors"
                       >
-                        <Trash2 size={18} />
+                        <Trash2 size={20} />
                       </button>
                     )}
                 </div>
@@ -310,8 +329,8 @@ export const ExpenseForm: React.FC<ExpenseFormProps> = ({ projects, onSave, onCa
             )}
             
             {aiAnalysis && (
-              <div className="mt-4 p-4 bg-gray-100 border-l-4 border-gray-600 text-gray-800 rounded flex items-start gap-3 animate-fade-in">
-                <Info className="flex-shrink-0 mt-1" size={24} />
+              <div className="mt-4 p-4 bg-gray-900 border-l-4 border-orange-500 text-white rounded flex items-start gap-3 animate-fade-in shadow-lg">
+                <Info className="flex-shrink-0 mt-1 text-orange-500" size={24} />
                 <p>{aiAnalysis}</p>
               </div>
             )}
@@ -321,7 +340,7 @@ export const ExpenseForm: React.FC<ExpenseFormProps> = ({ projects, onSave, onCa
         {/* Section 3: Payment */}
         <Card className="p-6">
            <h3 className="text-xl font-bold text-gray-900 mb-6 flex items-center gap-2">
-             <span className="bg-black text-white w-6 h-6 rounded text-sm flex items-center justify-center">3</span>
+             <span className="bg-black text-white w-8 h-8 rounded text-sm flex items-center justify-center font-bold">3</span>
              付款資訊
            </h3>
 
@@ -331,7 +350,7 @@ export const ExpenseForm: React.FC<ExpenseFormProps> = ({ projects, onSave, onCa
                 onClick={() => setPaymentMethod(PaymentMethod.ADVANCE)}
                 className={`cursor-pointer p-5 rounded-lg border-2 flex flex-col gap-3 transition-all relative ${
                   paymentMethod === PaymentMethod.ADVANCE 
-                  ? 'border-orange-500 bg-orange-50 shadow-md' 
+                  ? 'border-orange-500 bg-orange-50 shadow-md ring-1 ring-orange-500' 
                   : 'border-gray-200 hover:border-gray-400'
                 }`}
               >
@@ -345,17 +364,21 @@ export const ExpenseForm: React.FC<ExpenseFormProps> = ({ projects, onSave, onCa
                  
                  {paymentMethod === PaymentMethod.ADVANCE && (
                    <div className="mt-2 animate-fade-in">
-                      <label className="block text-sm font-bold text-gray-900 mb-1">選擇代墊人</label>
-                      <select
-                        className="w-full p-2 border border-gray-300 rounded text-gray-900 bg-white"
+                      <label className="block text-sm font-bold text-gray-900 mb-1">輸入代墊人姓名</label>
+                      <input
+                        type="text"
+                        list="employees-list"
+                        className={inputStyle}
                         value={payerName}
                         onChange={(e) => setPayerName(e.target.value)}
+                        placeholder="請輸入姓名或選擇"
                         onClick={(e) => e.stopPropagation()}
-                      >
-                        {EMPLOYEES.map(emp => (
-                          <option key={emp} value={emp}>{emp}</option>
-                        ))}
-                      </select>
+                      />
+                      <datalist id="employees-list">
+                          {existingEmployees.map(emp => (
+                              <option key={emp} value={emp} />
+                          ))}
+                      </datalist>
                    </div>
                  )}
               </div>
@@ -365,7 +388,7 @@ export const ExpenseForm: React.FC<ExpenseFormProps> = ({ projects, onSave, onCa
                 onClick={() => setPaymentMethod(PaymentMethod.DIRECT)}
                 className={`cursor-pointer p-5 rounded-lg border-2 flex flex-col gap-3 transition-all relative ${
                   paymentMethod === PaymentMethod.DIRECT 
-                  ? 'border-orange-500 bg-orange-50 shadow-md' 
+                  ? 'border-orange-500 bg-orange-50 shadow-md ring-1 ring-orange-500' 
                   : 'border-gray-200 hover:border-gray-400'
                 }`}
               >
@@ -383,7 +406,7 @@ export const ExpenseForm: React.FC<ExpenseFormProps> = ({ projects, onSave, onCa
                       <input 
                         type="text" 
                         maxLength={8}
-                        className="w-full p-2 border border-gray-300 rounded text-gray-900 tracking-widest bg-white"
+                        className={inputStyle}
                         value={vendorTaxId}
                         onChange={(e) => setVendorTaxId(e.target.value)}
                         onClick={(e) => e.stopPropagation()}
@@ -396,7 +419,7 @@ export const ExpenseForm: React.FC<ExpenseFormProps> = ({ projects, onSave, onCa
         </Card>
 
         {/* Footer Actions */}
-        <div className="fixed bottom-0 left-0 right-0 p-4 bg-white border-t border-gray-200 shadow-[0_-4px_10px_rgba(0,0,0,0.05)] z-20">
+        <div className="fixed bottom-0 left-0 right-0 p-4 bg-white border-t border-gray-200 shadow-[0_-4px_10px_rgba(0,0,0,0.1)] z-20">
           <div className="max-w-4xl mx-auto flex gap-4">
             <Button 
               type="button" 

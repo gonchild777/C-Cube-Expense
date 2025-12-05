@@ -24,13 +24,13 @@ export const AdminLogin: React.FC<AdminLoginProps> = ({ onLogin, onCancel }) => 
   };
 
   return (
-    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-      <Card className="w-full max-w-md p-8 bg-white relative">
+    <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-4 backdrop-blur-sm">
+      <Card className="w-full max-w-md p-8 bg-white relative shadow-2xl">
         <div className="text-center mb-6">
-          <div className="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-4 text-blue-600">
+          <div className="w-16 h-16 bg-black rounded-full flex items-center justify-center mx-auto mb-4 text-orange-500">
             <Lock size={32} />
           </div>
-          <h2 className="text-2xl font-bold text-gray-800">管理員登入</h2>
+          <h2 className="text-2xl font-bold text-gray-900">管理員登入</h2>
           <p className="text-gray-500 mt-2">請輸入管理密碼以查看經費總覽</p>
         </div>
 
@@ -40,14 +40,14 @@ export const AdminLogin: React.FC<AdminLoginProps> = ({ onLogin, onCancel }) => 
               type="password"
               autoFocus
               placeholder="請輸入密碼"
-              className="w-full text-center text-2xl p-4 border border-gray-300 rounded-lg tracking-widest"
+              className="w-full text-center text-2xl p-4 rounded-lg tracking-widest bg-gray-900 text-white border-2 border-gray-700 focus:border-orange-500 focus:ring-1 focus:ring-orange-500 placeholder-gray-500 transition-all"
               value={password}
               onChange={(e) => {
                 setPassword(e.target.value);
                 setError('');
               }}
             />
-            {error && <p className="text-red-500 text-center mt-2 font-medium">{error}</p>}
+            {error && <p className="text-red-600 text-center mt-2 font-bold">{error}</p>}
           </div>
 
           <div className="flex gap-4">

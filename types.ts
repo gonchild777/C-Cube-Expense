@@ -19,16 +19,26 @@ export enum PaymentMethod {
   DIRECT = '逕付廠商'   // Pay directly to vendor
 }
 
+export interface BudgetAdjustment {
+  id: string;
+  date: string;
+  amount: number; // Positive = Increase Spent (Decrease Remaining), Negative = Refund
+  reason: string;
+  user: string;
+}
+
 export interface Project {
   id: string;
   name: string;
   code: string; // Accounting code e.g., 112-2221-E-006...
   type: ProjectType;
   budget: number;
-  remaining: number; // calculated field (Total - Pending - Spent)
+  categoryBudgets?: Record<string, number>; // Specific budget limit per category
+  remaining: number; // calculated field
   pending: number;   // Amount reserved by Company Approved/Logged expenses
-  spent: number;     // Amount actually consumed by NCKU Approved/Paid
+  spent: number;     // Amount actually consumed by NCKU Approved/Paid + Manual Adjustments
   allowedCategories: string[]; // List of allowed categories
+  adjustments: BudgetAdjustment[]; // History of manual corrections
 }
 
 export interface InvoiceItem {
@@ -44,7 +54,7 @@ export interface Expense {
   projectId: string;
   category: string;
   date: string; // Invoice date
-  invoiceNumber: string; // Invoice ID
+  invoiceNumber?: string; // Optional now
   
   // Payment Details
   paymentMethod: PaymentMethod;

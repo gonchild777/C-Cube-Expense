@@ -23,11 +23,13 @@ export const INITIAL_PROJECTS: Project[] = [
     name: '尚未決定 (待確認歸屬)',
     code: 'PENDING-DECISION',
     type: ProjectType.DEPARTMENT,
-    budget: 0, // 統籌款通常不設限或後續分配
+    budget: 0, 
     remaining: 0,
     pending: 0,
     spent: 0,
     allowedCategories: ['office', 'travel', 'equipment', 'meal', 'consumable', 'maintenance'],
+    categoryBudgets: {},
+    adjustments: []
   },
   {
     id: 'p1',
@@ -39,6 +41,11 @@ export const INITIAL_PROJECTS: Project[] = [
     pending: 0,
     spent: 0,
     allowedCategories: ['office', 'travel', 'consumable', 'equipment'],
+    categoryBudgets: {
+       'travel': 200000,
+       'equipment': 500000
+    },
+    adjustments: []
   },
   {
     id: 'p2',
@@ -50,6 +57,8 @@ export const INITIAL_PROJECTS: Project[] = [
     pending: 0,
     spent: 0,
     allowedCategories: ['office', 'travel', 'equipment', 'meal', 'consumable', 'maintenance'],
+    categoryBudgets: {},
+    adjustments: []
   },
   {
     id: 'p3',
@@ -61,6 +70,10 @@ export const INITIAL_PROJECTS: Project[] = [
     pending: 0,
     spent: 0,
     allowedCategories: ['office', 'meal', 'maintenance'],
+    categoryBudgets: {
+        'meal': 50000
+    },
+    adjustments: []
   },
 ];
 
