@@ -1,0 +1,5 @@
+{
+  "name": "C-Cube Expense",
+  "description": "C-Cube internal expense management system featuring AI assistance and rule compliance checks.",
+  "requestFramePermissions": []
+}
